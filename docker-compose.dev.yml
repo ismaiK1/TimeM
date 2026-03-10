@@ -1,0 +1,86 @@
+# Time Manager — Compose de DÉVELOPPEMENT
+# Usage : docker compose -f docker-compose.dev.yml up -d
+# Accès : http://localhost:${NGINX_HTTP_PORT:-8080} (reverse proxy)
+
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: timemanager-db-dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-timemanager}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-timemanager_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-timemanager_dev}
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-timemanager} -d ${POSTGRES_DB:-timemanager_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: timemanager-backend-dev
+    user: "0:0"  # root en dev pour que prisma generate puisse écrire dans node_modules
+    command: sh -c "npx prisma generate && npm run dev"
+    environment:
+      NODE_ENV: development
+      PORT: ${BACKEND_PORT:-3000}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-timemanager}:${POSTGRES_PASSWORD:-timemanager_secret}@database:5432/${POSTGRES_DB:-timemanager_dev}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_prod}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - backend_logs:/app/logs
+    depends_on:
+      database:
+        condition: service_healthy
+    expose:
+      - "3000"
+    # Optionnel : accès direct au backend (sans Nginx)
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: timemanager-frontend-dev
+    environment:
+      VITE_API_BASE_URL: http://localhost:${NGINX_HTTP_PORT:-8080}/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    expose:
+      - "5173"
+    stdin_open: true
+    tty: true
+
+  nginx:
+    image: nginx:alpine
+    container_name: timemanager-nginx-dev
+    ports:
+      - "${NGINX_HTTP_PORT:-8080}:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - backend
+      - frontend
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: timemanager-mailpit-dev
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+volumes:
+  postgres_data_dev:
+  backend_logs:
+  nginx_logs:

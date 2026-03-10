@@ -1,0 +1,52 @@
+// Time Manager — Schéma Prisma (aligné docs/DB_SCHEMA.md)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String  @map("password_hash")
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  role         Role
+  teamId       String?  @map("team_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  team    Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  clocks  Clock[]
+  managedTeam Team? @relation("TeamManager")
+}
+
+model Team {
+  id        String   @id @default(uuid())
+  name      String
+  managerId String?  @unique @map("manager_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  manager User?  @relation("TeamManager", fields: [managerId], references: [id], onDelete: SetNull)
+  members User[]
+}
+
+model Clock {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  clockIn   DateTime @map("clock_in")
+  clockOut  DateTime? @map("clock_out")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,11 @@
+# Time Manager — Backend (développement, hot-reload)
+# Usage : docker-compose.dev.yml (volume ./backend:/app)
+FROM node:20-alpine
+RUN apk add --no-cache openssl
+WORKDIR /app
+COPY package*.json ./
+COPY prisma ./prisma/
+RUN npm ci && npx prisma generate
+COPY . .
+EXPOSE 3000
+CMD ["npm", "run", "dev"]

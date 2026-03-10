@@ -1,0 +1,21 @@
+node_modules/
+.env
+.env.local
+*.env.local
+*.log
+coverage/
+dist/
+.nyc_output/
+.vitest/
+logs/
+backend/logs/
+frontend/logs/
+
+# Docker
+postgres_data_dev/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
