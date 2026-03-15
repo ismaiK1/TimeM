@@ -5,6 +5,7 @@
 services:
   database:
     image: postgres:16-alpine
+    container_name: timemanager-db-prod
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
