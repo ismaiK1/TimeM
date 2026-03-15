@@ -432,7 +432,7 @@ const App = () => {
           {error}
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${user?.role === 'MANAGER' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
         <StatCard
           title="Heures (moy/jour)"
           value={`${statsSummary.avgHoursPerDay ?? 0}h`}
@@ -454,13 +454,15 @@ const App = () => {
           icon={AlertCircle}
           color="rose"
         />
-        <StatCard
-          title="Membres"
-          value={teamMembers.length}
-          subValue="Équipe"
-          icon={Users}
-          color="amber"
-        />
+        {user?.role === 'MANAGER' && (
+          <StatCard
+            title="Membres"
+            value={teamMembers.length}
+            subValue="Équipe"
+            icon={Users}
+            color="amber"
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -562,15 +564,17 @@ const App = () => {
           <h3 className="font-bold text-slate-800 text-lg">Membres de l&apos;équipe</h3>
           <p className="text-sm text-slate-500">Gérez les accès et visualisez les performances</p>
         </div>
-        <button
-          type="button"
-          onClick={handleOpenAddMember}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 hover:bg-indigo-700 transition-colors duration-300 shadow-lg shadow-indigo-100"
-          aria-label="Ajouter un membre"
-        >
-          <UserPlus size={18} />
-          <span>Ajouter</span>
-        </button>
+{user?.role === 'MANAGER' && (
+          <button
+            type="button"
+            onClick={handleOpenAddMember}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 hover:bg-indigo-700 transition-colors duration-300 shadow-lg shadow-indigo-100"
+            aria-label="Ajouter un membre"
+          >
+            <UserPlus size={18} />
+            <span>Ajouter</span>
+          </button>
+        )}
       </div>
       {loadingMembers ? (
         <div className="p-12 flex justify-center">
@@ -653,22 +657,26 @@ const App = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditMember(member)}
-                        className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-indigo-600 shadow-sm transition-all duration-300 border border-transparent hover:border-slate-100"
-                        aria-label="Éditer le membre"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteMember(member.id, member.name)}
-                        className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-rose-600 shadow-sm transition-all duration-300 border border-transparent hover:border-slate-100"
-                        aria-label="Supprimer le membre"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {user?.role === 'MANAGER' && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditMember(member)}
+                            className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-indigo-600 shadow-sm transition-all duration-300 border border-transparent hover:border-slate-100"
+                            aria-label="Éditer le membre"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMember(member.id, member.name)}
+                            className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-rose-600 shadow-sm transition-all duration-300 border border-transparent hover:border-slate-100"
+                            aria-label="Supprimer le membre"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -964,7 +972,7 @@ const App = () => {
           <h1 className="text-xl font-bold tracking-tight">TimeManager</h1>
         </div>
 
-        <nav className="flex-1 space-y-2" aria-label="Navigation principale">
+<nav className="flex-1 space-y-2" aria-label="Navigation principale">
           <SidebarItem
             icon={LayoutDashboard}
             label="Tableau de bord"
@@ -977,12 +985,14 @@ const App = () => {
             active={activeTab === 'historique'}
             onClick={() => setActiveTab('historique')}
           />
-          <SidebarItem
-            icon={Users}
-            label="Mon équipe"
-            active={activeTab === 'team'}
-            onClick={() => setActiveTab('team')}
-          />
+          {user?.role === 'MANAGER' && (
+            <SidebarItem
+              icon={Users}
+              label="Mon équipe"
+              active={activeTab === 'team'}
+              onClick={() => setActiveTab('team')}
+            />
+          )}
         </nav>
 
         <div className="pt-6 mt-6 border-t border-slate-100 space-y-1">

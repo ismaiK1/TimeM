@@ -56,7 +56,30 @@ function mapUserToMember(u) {
  */
 export async function getMembers() {
   const list = await usersApi.list();
-  return Array.isArray(list) ? list.map(mapUserToMember) : [];
+  if (!Array.isArray(list)) return [];
+
+  // On récupère la base des utilisateurs
+  const members = list.map(mapUserToMember);
+
+  // On va chercher les vraies stats pour chacun (en parallèle pour que ce soit rapide)
+  const membersWithStats = await Promise.all(
+    members.map(async (member) => {
+      try {
+        // On demande les stats des 7 derniers jours pour ce membre précis
+        const stats = await getStats('7d', member.id);
+        
+        // On met à jour les données du tableau
+        member.lateRate = stats.lateRate.rate ? Math.round(stats.lateRate.rate * 100) : 0;
+        member.hours = stats.statsSummary.avgHoursPerWeek || 0;
+      } catch (err) {
+        // Si erreur, on laisse à 0
+        console.error("Erreur stats pour", member.id, err);
+      }
+      return member;
+    })
+  );
+
+  return membersWithStats;
 }
 
 /**
@@ -80,9 +103,10 @@ export async function clockOut() {
  * @param {string} period - '7d' | 'month'
  * @returns {Promise<{ lateRate: { rate, lateCount, totalCount }, lateData: Array<{ name, value, color }>, workHoursData: Array<{ day, hours }>, statsSummary: Object }>}
  */
-export async function getStats(period = '7d') {
+export async function getStats(period = '7d', userId = null) {
   const { from, to } = getDateRangeForPeriod(period);
   const params = { from, to };
+  if (userId) params.userId = userId; // On ajoute l'ID de l'employé
   const [lateRateRes, avgHoursRes] = await Promise.all([
     statsApi.lateRate(params),
     statsApi.avgHours({ ...params, granularity: 'day' }),
