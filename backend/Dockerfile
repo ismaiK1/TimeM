@@ -16,6 +16,7 @@ COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
 COPY package*.json ./
 COPY prisma ./prisma/
 COPY --chown=node:node src ./src
+RUN mkdir -p /app/logs && chown -R node:node /app/logs
 USER node
 EXPOSE 3000
 CMD ["node", "src/server.js"]
