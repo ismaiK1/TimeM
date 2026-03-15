@@ -39,7 +39,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
-      container_name: timemanager-frontend-prod
+    container_name: timemanager-frontend-prod
     expose:
       - "80"
 
@@ -54,7 +54,7 @@ services:
     depends_on:
       - backend
       - frontend
-      
+
 volumes:
   postgres_data_prod:
   backend_logs:
